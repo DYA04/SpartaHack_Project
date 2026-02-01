@@ -190,6 +190,7 @@ def create_job(request):
         'latitude': lat,
         'longitude': lng,
         'location_label': location_label,
+        'image': data.get('image', ''),
     }
 
     if data.get('shift_start'):

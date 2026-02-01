@@ -21,6 +21,10 @@ function getMockEnhanceResponse(prompt: string): EnhanceJobResponse {
   };
 }
 
+interface GenerateImageAPIResponse {
+  image_url: string;
+}
+
 export const aiService = {
   async enhanceJob(prompt: string): Promise<EnhanceJobResponse> {
     if (!prompt.trim()) {
@@ -55,6 +59,42 @@ export const aiService = {
         }
       }
       throw new Error('Failed to enhance job description. Please try again.');
+    }
+  },
+
+  async generateImage(prompt: string): Promise<string> {
+    if (!prompt.trim()) {
+      throw new Error('Please enter a title or description first');
+    }
+
+    if (prompt.length > 300) {
+      prompt = prompt.slice(0, 300);
+    }
+
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return '/media/job_images/mock-image.png';
+    }
+
+    try {
+      const response = await api.post<GenerateImageAPIResponse>('/ai/generate-image', {
+        prompt: prompt.trim(),
+      });
+      return response.data.image_url;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { error?: string } } };
+        if (axiosError.response?.status === 429) {
+          throw new Error('Image generation rate limit exceeded. Please try again later.');
+        }
+        if (axiosError.response?.status === 503) {
+          throw new Error('Image generation is temporarily unavailable. Please try again.');
+        }
+        if (axiosError.response?.data?.error) {
+          throw new Error(axiosError.response.data.error);
+        }
+      }
+      throw new Error('Failed to generate image. Please try again.');
     }
   },
 };

@@ -20,7 +20,7 @@ class JobMatchSerializer(serializers.ModelSerializer):
             'skill_tags', 'location_label',
             'shift_start', 'shift_end', 'is_urgent',
             'distance', 'distance_display', 'score', 'poster_username',
-            'accessibility_requirements', 'status',
+            'accessibility_requirements', 'status', 'image',
         ]
         # Note: latitude/longitude removed from fields for privacy
 
@@ -43,7 +43,7 @@ class JobDetailSerializer(serializers.ModelSerializer):
             'id', 'title', 'short_description', 'description',
             'skill_tags', 'latitude', 'longitude', 'location_label',
             'shift_start', 'shift_end', 'is_urgent',
-            'poster_username', 'accessibility_requirements', 'status',
+            'poster_username', 'accessibility_requirements', 'status', 'image',
         ]
 
 
@@ -140,6 +140,7 @@ class JobCreateSerializer(serializers.Serializer):
     longitude = serializers.FloatField(required=False, default=0.0)
     shift_start = serializers.DateTimeField(required=False, allow_null=True, default=None)
     shift_end = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    image = serializers.CharField(max_length=500, required=False, default='')
 
     def validate(self, data):
         if data.get('shift_start') and data.get('shift_end'):

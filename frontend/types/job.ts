@@ -15,6 +15,7 @@ export interface JobFormData {
   longitude?: number;
   shift_start?: string;
   shift_end?: string;
+  image?: string;
 }
 
 export interface EnhanceJobResponse {

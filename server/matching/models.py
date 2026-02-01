@@ -23,6 +23,7 @@ class Job(BaseModel):
     shift_end = models.DateTimeField()
     skill_tags = models.JSONField(default=list, blank=True)
     accessibility_requirements = models.JSONField(default=list, blank=True)
+    image = models.CharField(max_length=500, blank=True, default='')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
 
     @property
