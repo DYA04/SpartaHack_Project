@@ -102,12 +102,23 @@ function AuthForm() {
         router.replace('/matching');
       }
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { detail?: string; message?: string } } };
-      setError(
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        'An error occurred. Please try again.'
-      );
+      const error = err as { response?: { data?: Record<string, unknown> } };
+      const data = error.response?.data;
+      if (data) {
+        if (typeof data.detail === 'string') {
+          setError(data.detail);
+        } else if (typeof data.message === 'string') {
+          setError(data.message);
+        } else {
+          // Handle Django field-level errors like { email: ["..."], password: ["..."] }
+          const messages = Object.entries(data)
+            .map(([, value]) => (Array.isArray(value) ? value.join(' ') : String(value)))
+            .join(' ');
+          setError(messages || 'An error occurred. Please try again.');
+        }
+      } else {
+        setError('An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
