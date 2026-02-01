@@ -14,17 +14,57 @@ interface ProfileEditModalProps {
 }
 
 const LIMITATION_OPTIONS = [
+  // Physical/Mobility
   'heavy_lifting',
   'standing_long',
+  'walking_long',
+  'climbing_stairs',
+  'bending_kneeling',
+  // Transportation
   'driving_required',
+  'no_transportation',
+  // Environment
   'outdoor_work',
+  'extreme_temps',
+  'loud_environments',
+  // Sensory
+  'vision_impaired',
+  'hearing_impaired',
+  // Schedule/Time
+  'evening_hours',
+  'weekend_only',
+  'limited_hours',
+  // Other
+  'animal_allergies',
+  'chemical_sensitivity',
+  'crowded_spaces',
 ];
 
 const LIMITATION_LABELS: Record<string, string> = {
-  heavy_lifting: 'Cannot do heavy lifting',
+  // Physical/Mobility
+  heavy_lifting: 'Cannot do heavy lifting (over 25 lbs)',
   standing_long: 'Cannot stand for long periods',
+  walking_long: 'Cannot walk long distances',
+  climbing_stairs: 'Cannot climb stairs',
+  bending_kneeling: 'Cannot bend or kneel',
+  // Transportation
   driving_required: 'Cannot drive',
+  no_transportation: 'No reliable transportation',
+  // Environment
   outdoor_work: 'Cannot work outdoors',
+  extreme_temps: 'Cannot work in extreme heat/cold',
+  loud_environments: 'Cannot work in loud environments',
+  // Sensory
+  vision_impaired: 'Vision impaired',
+  hearing_impaired: 'Hearing impaired',
+  // Schedule/Time
+  evening_hours: 'Cannot work evenings',
+  weekend_only: 'Weekends only',
+  limited_hours: 'Limited to short shifts (2-3 hours)',
+  // Other
+  animal_allergies: 'Animal allergies',
+  chemical_sensitivity: 'Sensitive to chemicals/fragrances',
+  crowded_spaces: 'Cannot work in crowded spaces',
 };
 
 export default function ProfileEditModal({
@@ -100,26 +140,157 @@ export default function ProfileEditModal({
 
         {/* Limitations */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Physical Limitations</label>
-          <div className="space-y-2">
-            {LIMITATION_OPTIONS.map((lim) => (
-              <label
-                key={lim}
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                  limitations.includes(lim)
-                    ? 'border-primary bg-primary/5'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={limitations.includes(lim)}
-                  onChange={() => toggleLimitation(lim)}
-                  className="w-4 h-4 text-primary rounded focus:ring-primary"
-                />
-                <span className="text-sm text-gray-700">{LIMITATION_LABELS[lim]}</span>
-              </label>
-            ))}
+          <label className="block text-sm font-medium text-gray-700 mb-2">Limitations & Accommodations</label>
+          <p className="text-xs text-gray-500 mb-3">Select any that apply to help us match you with suitable opportunities.</p>
+
+          {/* Physical/Mobility */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Physical / Mobility</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {['heavy_lifting', 'standing_long', 'walking_long', 'climbing_stairs', 'bending_kneeling'].map((lim) => (
+                <label
+                  key={lim}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    limitations.includes(lim)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={limitations.includes(lim)}
+                    onChange={() => toggleLimitation(lim)}
+                    className="w-4 h-4 text-primary rounded focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{LIMITATION_LABELS[lim]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Transportation */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Transportation</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {['driving_required', 'no_transportation'].map((lim) => (
+                <label
+                  key={lim}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    limitations.includes(lim)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={limitations.includes(lim)}
+                    onChange={() => toggleLimitation(lim)}
+                    className="w-4 h-4 text-primary rounded focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{LIMITATION_LABELS[lim]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Environment */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Environment</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {['outdoor_work', 'extreme_temps', 'loud_environments', 'crowded_spaces'].map((lim) => (
+                <label
+                  key={lim}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    limitations.includes(lim)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={limitations.includes(lim)}
+                    onChange={() => toggleLimitation(lim)}
+                    className="w-4 h-4 text-primary rounded focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{LIMITATION_LABELS[lim]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Sensory */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Sensory</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {['vision_impaired', 'hearing_impaired'].map((lim) => (
+                <label
+                  key={lim}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    limitations.includes(lim)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={limitations.includes(lim)}
+                    onChange={() => toggleLimitation(lim)}
+                    className="w-4 h-4 text-primary rounded focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{LIMITATION_LABELS[lim]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Schedule */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Schedule</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {['evening_hours', 'weekend_only', 'limited_hours'].map((lim) => (
+                <label
+                  key={lim}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    limitations.includes(lim)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={limitations.includes(lim)}
+                    onChange={() => toggleLimitation(lim)}
+                    className="w-4 h-4 text-primary rounded focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{LIMITATION_LABELS[lim]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Other */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Other</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {['animal_allergies', 'chemical_sensitivity'].map((lim) => (
+                <label
+                  key={lim}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    limitations.includes(lim)
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={limitations.includes(lim)}
+                    onChange={() => toggleLimitation(lim)}
+                    className="w-4 h-4 text-primary rounded focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{LIMITATION_LABELS[lim]}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 
