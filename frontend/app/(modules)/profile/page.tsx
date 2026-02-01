@@ -26,7 +26,7 @@ function adaptProfile(data: ProfileResponse): UserProfile {
     username: data.user.username,
     firstName: data.user.first_name || '',
     lastName: data.user.last_name || '',
-    avatar: undefined,
+    avatar: data.user.avatar_url || undefined,
     bio: '',
     location: data.profile.display_location || 'Location not set',
     joinedAt: new Date().toISOString(),
@@ -185,9 +185,17 @@ export default function ProfilePage() {
               </Link>
               {profile && (
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium">
-                    {profile.firstName[0]}{profile.lastName[0]}
-                  </div>
+                  {backendProfile?.user.avatar_url ? (
+                    <img
+                      src={backendProfile.user.avatar_url}
+                      alt={`${profile.firstName} ${profile.lastName}`}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium">
+                      {profile.firstName[0]}{profile.lastName[0]}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -204,7 +212,26 @@ export default function ProfilePage() {
             <div className="space-y-6">
               {/* Profile Header with Edit Buttons */}
               <div className="relative">
-                <ProfileHeader profile={profile} />
+                <ProfileHeader
+                  profile={profile}
+                  avatarUrl={backendProfile?.user.avatar_url}
+                  onAvatarUpload={(newUrl) => {
+                    if (backendProfile) {
+                      setBackendProfile({
+                        ...backendProfile,
+                        user: { ...backendProfile.user, avatar_url: newUrl },
+                      });
+                    }
+                  }}
+                  onAvatarDelete={() => {
+                    if (backendProfile) {
+                      setBackendProfile({
+                        ...backendProfile,
+                        user: { ...backendProfile.user, avatar_url: null },
+                      });
+                    }
+                  }}
+                />
                 <div className="absolute top-4 right-4 flex gap-2">
                   <button
                     onClick={() => setShowLocationModal(true)}
