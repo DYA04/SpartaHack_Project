@@ -1,14 +1,23 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/viewmodels/auth.viewmodel';
 
 export default function Header() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Don't render auth-dependent content until hydration is complete
+  const showAuthContent = hasMounted && _hasHydrated;
 
   return (
     <header className="h-16 border-b border-gray-200 flex items-center justify-between px-6 bg-white">
-      <Link href={isAuthenticated ? '/matching' : '/'} className="flex items-center gap-2">
+      <Link href={showAuthContent && isAuthenticated ? '/matching' : '/'} className="flex items-center gap-2">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <svg
             className="w-5 h-5 text-white"
@@ -27,7 +36,7 @@ export default function Header() {
         <span className="text-lg font-bold text-gray-900">Volunteer Matchmaker</span>
       </Link>
 
-      {isAuthenticated && user && (
+      {showAuthContent && isAuthenticated && user && (
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-600">{user.first_name} {user.last_name}</span>
           <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium">

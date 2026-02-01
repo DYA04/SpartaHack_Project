@@ -192,7 +192,7 @@ export default function SwipeCard({ job, onSwipeLeft, onSwipeRight, isTop }: Swi
             swipeDirection === 'right' ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          INTERESTED
+          ACCEPT
         </div>
 
         {/* Card content */}
@@ -274,10 +274,10 @@ export default function SwipeCard({ job, onSwipeLeft, onSwipeRight, isTop }: Swi
           <button
             onClick={handleInterestClick}
             className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all active:scale-95"
-            aria-label="Express interest"
+            aria-label="Accept job"
           >
             <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </button>
         </div>

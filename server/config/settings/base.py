@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'authentication',
     'matching',
     'ai_assist',
+    'chat',
 ]
 
 MIDDLEWARE = [

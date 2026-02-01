@@ -347,7 +347,7 @@ export default function JobSubmissionForm({ onSubmit }: JobSubmissionFormProps) 
               type="button"
               onClick={() => {
                 if (!navigator.geolocation) {
-                  setLocationStatus('Geolocation not supported');
+                  showToast('Geolocation is not supported by your browser', 'error');
                   return;
                 }
                 setLocationStatus('Getting location...');
@@ -356,9 +356,28 @@ export default function JobSubmissionForm({ onSubmit }: JobSubmissionFormProps) 
                     setLatitude(pos.coords.latitude);
                     setLongitude(pos.coords.longitude);
                     setLocationStatus(`Location set (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
+                    showToast('Location set successfully!', 'success');
                   },
-                  () => {
-                    setLocationStatus('Unable to get location');
+                  (error) => {
+                    setLocationStatus('');
+                    switch (error.code) {
+                      case error.PERMISSION_DENIED:
+                        showToast('Location permission denied. Please enable location access in your browser settings.', 'error');
+                        break;
+                      case error.POSITION_UNAVAILABLE:
+                        showToast('Location information unavailable. Please try again.', 'error');
+                        break;
+                      case error.TIMEOUT:
+                        showToast('Location request timed out. Please try again.', 'error');
+                        break;
+                      default:
+                        showToast('Unable to get your location. Please try again.', 'error');
+                    }
+                  },
+                  {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0,
                   }
                 );
               }}

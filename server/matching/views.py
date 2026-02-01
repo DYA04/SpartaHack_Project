@@ -79,6 +79,14 @@ def swipe_interest(request):
         defaults={'interested': interested},
     )
 
+    # If user expressed interest (swiped right), create a pending JobAcceptance
+    if interested:
+        JobAcceptance.objects.get_or_create(
+            user=request.user,
+            job=job,
+            defaults={'status': 'pending'},
+        )
+
     action = 'interested in' if interested else 'passed on'
     return Response({
         'status': f'You {action} "{job.title}"',
@@ -246,7 +254,8 @@ def get_or_update_profile(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def accept_volunteer(request, job_id):
+def confirm_volunteer(request, job_id):
+    """Poster confirms a volunteer who has expressed interest (pending -> confirmed)."""
     serializer = AcceptVolunteerSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -256,7 +265,7 @@ def accept_volunteer(request, job_id):
         return Response({'error': 'Job not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if job.poster != request.user:
-        return Response({'error': 'Only the poster can accept volunteers.'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'error': 'Only the poster can confirm volunteers.'}, status=status.HTTP_403_FORBIDDEN)
 
     volunteer_id = serializer.validated_data['user_id']
     try:
@@ -264,20 +273,36 @@ def accept_volunteer(request, job_id):
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Verify user expressed interest
-    if not MatchingInterest.objects.filter(user=volunteer, job=job, interested=True).exists():
+    # Find the pending acceptance (created when volunteer swiped right)
+    try:
+        acceptance = JobAcceptance.objects.get(user=volunteer, job=job)
+    except JobAcceptance.DoesNotExist:
         return Response({'error': 'User has not expressed interest in this job.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    acceptance, created = JobAcceptance.objects.get_or_create(
-        user=volunteer,
-        job=job,
-        defaults={'status': 'accepted'},
-    )
+    if acceptance.status not in ('pending', 'accepted'):
+        return Response({'error': f'Cannot confirm volunteer with status: {acceptance.status}'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not created:
-        return Response({'error': 'User has already been accepted for this job.'}, status=status.HTTP_400_BAD_REQUEST)
+    # Update status to confirmed
+    acceptance.status = 'confirmed'
+    acceptance.save()
 
-    return Response(JobAcceptanceSerializer(acceptance).data, status=status.HTTP_201_CREATED)
+    # Auto-create conversation for chat
+    try:
+        from chat.models import Conversation
+        Conversation.objects.get_or_create(
+            job=job,
+            volunteer=volunteer,
+            defaults={'poster': request.user}
+        )
+    except ImportError:
+        pass  # Chat app not installed yet
+
+    return Response(JobAcceptanceSerializer(acceptance).data)
+
+
+# Keep accept_volunteer as alias for backwards compatibility
+def accept_volunteer(request, job_id):
+    return confirm_volunteer(request, job_id)
 
 
 @api_view(['GET'])

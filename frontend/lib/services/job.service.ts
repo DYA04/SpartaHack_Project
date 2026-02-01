@@ -21,8 +21,51 @@ export interface JobAcceptance {
 
 export const jobService = {
   async createJob(data: JobFormData): Promise<Job> {
-    const response = await api.post<Job>('/matching/jobs/create', data);
-    return response.data;
+    try {
+      // Build payload, only including shift times if they have values
+      const payload: Record<string, unknown> = {
+        title: data.title,
+        description: data.description,
+        short_description: data.short_description,
+        skill_tags: data.skill_tags,
+        accessibility_flags: data.accessibility_flags,
+      };
+
+      // Only include location if set
+      if (data.latitude !== undefined && data.longitude !== undefined) {
+        payload.latitude = data.latitude;
+        payload.longitude = data.longitude;
+      }
+
+      // Convert datetime-local format to ISO if present (not empty string)
+      if (data.shift_start && data.shift_start.trim()) {
+        payload.shift_start = new Date(data.shift_start).toISOString();
+      }
+      if (data.shift_end && data.shift_end.trim()) {
+        payload.shift_end = new Date(data.shift_end).toISOString();
+      }
+
+      const response = await api.post<Job>('/matching/jobs/create', payload);
+      return response.data;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: Record<string, unknown> } };
+        if (axiosError.response?.status === 400) {
+          // Extract validation error message
+          const errData = axiosError.response.data;
+          if (errData && typeof errData === 'object') {
+            const messages = Object.entries(errData)
+              .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+              .join('; ');
+            throw new Error(messages || 'Invalid data submitted');
+          }
+        }
+        if (axiosError.response?.status === 401) {
+          throw new Error('Please log in to post a job');
+        }
+      }
+      throw error;
+    }
   },
 
   async getMyPostedJobs(): Promise<Job[]> {
@@ -56,6 +99,14 @@ export const jobService = {
 
   async acceptVolunteer(jobId: string, userId: number): Promise<JobAcceptance> {
     const response = await api.post<JobAcceptance>(`/matching/jobs/${jobId}/accept`, {
+      user_id: userId,
+    });
+    return response.data;
+  },
+
+  // Alias for acceptVolunteer - poster confirms a volunteer
+  async confirmVolunteer(jobId: string, userId: number): Promise<JobAcceptance> {
+    const response = await api.post<JobAcceptance>(`/matching/jobs/${jobId}/confirm`, {
       user_id: userId,
     });
     return response.data;

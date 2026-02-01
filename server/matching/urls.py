@@ -18,7 +18,8 @@ urlpatterns = [
     # Acceptance
     path('jobs/accepted', views.my_accepted_jobs, name='my-accepted-jobs'),
     path('jobs/interested', views.my_interested_jobs, name='my-interested-jobs'),
-    path('jobs/<uuid:job_id>/accept', views.accept_volunteer, name='accept-volunteer'),
+    path('jobs/<uuid:job_id>/accept', views.confirm_volunteer, name='accept-volunteer'),  # Legacy name
+    path('jobs/<uuid:job_id>/confirm', views.confirm_volunteer, name='confirm-volunteer'),
     path('jobs/<uuid:job_id>/interested', views.job_interested_users, name='job-interested-users'),
 
     # Profile

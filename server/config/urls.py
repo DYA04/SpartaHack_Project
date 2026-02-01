@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/auth/', include('authentication.urls')),
     path('api/matching/', include('matching.urls')),
     path('api/ai/', include('ai_assist.urls')),
+    path('api/chat/', include('chat.urls')),
 ]

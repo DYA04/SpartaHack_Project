@@ -4,21 +4,21 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/viewmodels/auth.viewmodel';
 import { jobService, JobAcceptance } from '@/lib/services/job.service';
-import { Job } from '@/types/matching';
 import Layout from '@/components/layout/Layout';
 import JobCard from '@/components/dashboard/JobCard';
 
-type Tab = 'interested' | 'accepted' | 'completed';
+type Tab = 'pending' | 'confirmed' | 'completed';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<Tab>('interested');
-  const [interestedJobs, setInterestedJobs] = useState<Job[]>([]);
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<Tab>('pending');
   const [acceptedJobs, setAcceptedJobs] = useState<JobAcceptance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
+
     if (!isAuthenticated) {
       router.push('/auth?mode=signin');
       return;
@@ -27,11 +27,7 @@ export default function DashboardPage() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [interested, accepted] = await Promise.all([
-          jobService.getInterestedJobs(),
-          jobService.getAcceptedJobs(),
-        ]);
-        setInterestedJobs(interested);
+        const accepted = await jobService.getAcceptedJobs();
         setAcceptedJobs(accepted);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -41,16 +37,24 @@ export default function DashboardPage() {
     };
 
     loadData();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, _hasHydrated, router]);
 
+  // Filter jobs by status
+  const pendingJobs = acceptedJobs.filter((a) => a.status === 'pending');
+  const confirmedJobs = acceptedJobs.filter((a) =>
+    a.status === 'confirmed' || a.status === 'accepted' || a.status === 'in_progress'
+  );
   const completedJobs = acceptedJobs.filter((a) => a.status === 'completed');
-  const activeAccepted = acceptedJobs.filter((a) => a.status !== 'completed');
 
-  const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: 'interested', label: 'Interested', count: interestedJobs.length },
-    { key: 'accepted', label: 'Accepted', count: activeAccepted.length },
-    { key: 'completed', label: 'Completed', count: completedJobs.length },
+  const tabs: { key: Tab; label: string; count: number; description: string }[] = [
+    { key: 'pending', label: 'Pending', count: pendingJobs.length, description: 'Waiting for poster confirmation' },
+    { key: 'confirmed', label: 'Confirmed', count: confirmedJobs.length, description: 'Ready to work' },
+    { key: 'completed', label: 'Completed', count: completedJobs.length, description: 'Finished jobs' },
   ];
+
+  const handleChatClick = (jobId: string) => {
+    router.push(`/chat?job=${jobId}`);
+  };
 
   return (
     <Layout>
@@ -81,6 +85,11 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Tab description */}
+        <p className="text-sm text-gray-500 mb-4">
+          {tabs.find((t) => t.key === activeTab)?.description}
+        </p>
+
         {/* Content */}
         {isLoading ? (
           <div className="space-y-3">
@@ -94,11 +103,11 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            {activeTab === 'interested' && (
+            {activeTab === 'pending' && (
               <div>
-                {interestedJobs.length === 0 ? (
+                {pendingJobs.length === 0 ? (
                   <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                    <p className="text-gray-500 mb-4">No jobs you have expressed interest in yet.</p>
+                    <p className="text-gray-500 mb-4">No pending jobs. Accept jobs to see them here.</p>
                     <button
                       onClick={() => router.push('/matching')}
                       className="text-primary font-medium hover:underline"
@@ -108,24 +117,43 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {interestedJobs.map((job) => (
-                      <JobCard key={job.id} job={job} />
+                    {pendingJobs.map((acceptance) => (
+                      <JobCard
+                        key={acceptance.id}
+                        job={acceptance.job}
+                        status={acceptance.status}
+                      />
                     ))}
                   </div>
                 )}
               </div>
             )}
 
-            {activeTab === 'accepted' && (
+            {activeTab === 'confirmed' && (
               <div>
-                {activeAccepted.length === 0 ? (
+                {confirmedJobs.length === 0 ? (
                   <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                    <p className="text-gray-500">No accepted jobs yet. Keep expressing interest!</p>
+                    <p className="text-gray-500">No confirmed jobs yet. Wait for posters to confirm your interest!</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {activeAccepted.map((acceptance) => (
-                      <JobCard key={acceptance.id} job={acceptance.job} status={acceptance.status} />
+                    {confirmedJobs.map((acceptance) => (
+                      <JobCard
+                        key={acceptance.id}
+                        job={acceptance.job}
+                        status={acceptance.status}
+                        actions={
+                          <button
+                            onClick={() => handleChatClick(acceptance.job.id)}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Chat
+                          </button>
+                        }
+                      />
                     ))}
                   </div>
                 )}
