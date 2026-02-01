@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/viewmodels/auth.viewmodel';
+import { profileService, ProfileResponse, BadgeResponse } from '@/lib/services/profile.service';
 import {
-  fetchUserProfile,
   UserProfile,
   AccessibilityPreferences as AccessibilityPrefsType,
 } from '@/lib/mock/profileData';
-import { fetchBadgeData, BadgeData } from '@/lib/mock/badgeData';
+import { BadgeData } from '@/lib/mock/badgeData';
 import {
   ProfileHeader,
   ViewToggle,
@@ -18,11 +18,84 @@ import {
   HelperView,
   AccessibilityPreferences,
 } from '@/components/profile';
+import ProfileEditModal from '@/components/profile/ProfileEditModal';
+
+// Adapter: convert backend ProfileResponse to frontend UserProfile shape
+function adaptProfile(data: ProfileResponse): UserProfile {
+  return {
+    id: data.user.id,
+    email: data.user.email,
+    username: data.user.username,
+    firstName: data.user.first_name || '',
+    lastName: data.user.last_name || '',
+    avatar: undefined,
+    bio: '',
+    location: data.profile.latitude && data.profile.longitude
+      ? `${data.profile.latitude.toFixed(2)}, ${data.profile.longitude.toFixed(2)}`
+      : 'Location not set',
+    joinedAt: new Date().toISOString(),
+    requesterStats: {
+      jobsSubmitted: 0,
+      jobsFulfilled: 0,
+      handshakeSuccessRate: 0,
+      activeJobs: 0,
+      averageRating: 0,
+    },
+    helperStats: {
+      jobsCompleted: 0,
+      hoursContributed: 0,
+      currentStreak: 0,
+      averageRating: 0,
+    },
+    badges: [],
+    skills: data.profile.skill_tags.map((tag, i) => ({
+      id: `skill-${i}`,
+      name: tag,
+      verified: false,
+      endorsements: 0,
+    })),
+    accessibilityPreferences: {
+      screenReaderOptimized: false,
+      highContrast: false,
+      reducedMotion: false,
+      largeText: false,
+      colorBlindMode: 'none',
+    },
+    impactBulletPoints: [],
+  };
+}
+
+// Adapter: convert backend badges to frontend BadgeData shape
+function adaptBadges(badges: BadgeResponse[]): BadgeData {
+  const LEVEL_MAP: Record<number, 'bronze' | 'silver' | 'gold'> = { 1: 'bronze', 2: 'silver', 3: 'gold' };
+
+  const trackBadges = badges
+    .filter((b) => b.level > 0)
+    .map((b) => ({
+      id: `badge-${b.track}`,
+      track: b.track as 'specialist' | 'firefighter' | 'anchor' | 'inclusionist',
+      name: b.track.charAt(0).toUpperCase() + b.track.slice(1),
+      level: LEVEL_MAP[b.level] || 'bronze' as const,
+      currentPoints: b.progress,
+      pointsToNextLevel: b.next_threshold ? b.next_threshold - b.progress : 0,
+      maxPoints: 250,
+      description: b.description,
+      earnedAt: new Date().toISOString(),
+    }));
+
+  const hasChampion = badges.some((b) => b.track === 'inclusionist' && b.level >= 3);
+  const totalPoints = badges.reduce((sum, b) => sum + b.progress, 0);
+
+  return {
+    badges: trackBadges,
+    accessibilityChampion: hasChampion,
+    totalPoints,
+  };
+}
 
 function LoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-6">
-      {/* Header skeleton */}
       <div className="bg-white rounded-xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-200" />
@@ -34,13 +107,9 @@ function LoadingSkeleton() {
           </div>
         </div>
       </div>
-
-      {/* Toggle skeleton */}
       <div className="flex justify-center">
         <div className="h-12 bg-gray-200 rounded-lg w-64" />
       </div>
-
-      {/* Stats skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white rounded-xl p-5 h-28">
@@ -60,28 +129,30 @@ export default function ProfilePage() {
   const [badgeData, setBadgeData] = useState<BadgeData | null>(null);
   const [activeView, setActiveView] = useState<ProfileView>('helper');
   const [isLoading, setIsLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [backendProfile, setBackendProfile] = useState<ProfileResponse | null>(null);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await profileService.getProfile();
+      setBackendProfile(data);
+      setProfile(adaptProfile(data));
+      setBadgeData(adaptBadges(data.badges));
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // In production, redirect to auth if not authenticated
-    // For dev, we'll show mock data regardless
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const [profileData, badges] = await Promise.all([
-          fetchUserProfile(),
-          fetchBadgeData(),
-        ]);
-        setProfile(profileData);
-        setBadgeData(badges);
-      } catch (error) {
-        console.error('Failed to load profile:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
+    if (!isAuthenticated) {
+      router.push('/auth?mode=signin');
+      return;
+    }
     loadData();
-  }, []);
+  }, [isAuthenticated, router]);
 
   const handleAccessibilityUpdate = (updates: Partial<AccessibilityPrefsType>) => {
     if (!profile) return;
@@ -118,10 +189,10 @@ export default function ProfilePage() {
 
             <div className="flex items-center gap-4">
               <Link
-                href="/"
+                href="/matching"
                 className="text-gray-600 hover:text-gray-900 text-sm font-medium"
               >
-                Home
+                Discover
               </Link>
               {profile && (
                 <div className="flex items-center gap-2">
@@ -142,8 +213,16 @@ export default function ProfilePage() {
             <LoadingSkeleton />
           ) : profile && badgeData ? (
             <div className="space-y-6">
-              {/* Profile Header */}
-              <ProfileHeader profile={profile} />
+              {/* Profile Header with Edit Button */}
+              <div className="relative">
+                <ProfileHeader profile={profile} />
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="absolute top-4 right-4 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                >
+                  Edit Profile
+                </button>
+              </div>
 
               {/* View Toggle */}
               <ViewToggle activeView={activeView} onViewChange={setActiveView} />
@@ -173,6 +252,17 @@ export default function ProfilePage() {
           )}
         </div>
       </main>
+
+      {/* Edit Modal */}
+      {backendProfile && (
+        <ProfileEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSave={loadData}
+          currentSkills={backendProfile.profile.skill_tags}
+          currentLimitations={backendProfile.profile.limitations}
+        />
+      )}
     </div>
   );
 }

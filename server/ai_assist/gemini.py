@@ -4,7 +4,11 @@ import logging
 
 from django.conf import settings
 from django.core.cache import cache
-from google import genai
+
+try:
+    from google import genai
+except ImportError:
+    genai = None
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +53,9 @@ def enhance_job_description(user_input: str) -> dict:
     api_key = getattr(settings, 'GEMINI_API_KEY', None)
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not configured")
+
+    if genai is None:
+        raise ValueError("google-genai package is not installed")
 
     client = genai.Client(api_key=api_key)
 

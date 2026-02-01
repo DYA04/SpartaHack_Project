@@ -65,6 +65,9 @@ export default function JobSubmissionForm({ onSubmit }: JobSubmissionFormProps) 
   const [accessibilityFlags, setAccessibilityFlags] = useState<AccessibilityFlags>(DEFAULT_ACCESSIBILITY_FLAGS);
   const [shiftStart, setShiftStart] = useState('');
   const [shiftEnd, setShiftEnd] = useState('');
+  const [latitude, setLatitude] = useState<number | undefined>();
+  const [longitude, setLongitude] = useState<number | undefined>();
+  const [locationStatus, setLocationStatus] = useState<string>('');
 
   // Confirm dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -173,6 +176,8 @@ export default function JobSubmissionForm({ onSubmit }: JobSubmissionFormProps) 
         short_description: shortDescription,
         skill_tags: selectedSkills,
         accessibility_flags: accessibilityFlags,
+        latitude,
+        longitude,
         shift_start: shiftStart || undefined,
         shift_end: shiftEnd || undefined,
       });
@@ -331,6 +336,43 @@ export default function JobSubmissionForm({ onSubmit }: JobSubmissionFormProps) 
                 <span className="text-sm text-gray-700">{label}</span>
               </label>
             ))}
+          </div>
+        </div>
+
+        {/* Location */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (!navigator.geolocation) {
+                  setLocationStatus('Geolocation not supported');
+                  return;
+                }
+                setLocationStatus('Getting location...');
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    setLatitude(pos.coords.latitude);
+                    setLongitude(pos.coords.longitude);
+                    setLocationStatus(`Location set (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
+                  },
+                  () => {
+                    setLocationStatus('Unable to get location');
+                  }
+                );
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Use My Location
+            </button>
+            {locationStatus && (
+              <span className="text-sm text-gray-500">{locationStatus}</span>
+            )}
           </div>
         </div>
 

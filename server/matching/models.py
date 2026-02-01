@@ -109,3 +109,22 @@ class MatchingInterest(BaseModel):
     def __str__(self):
         action = 'interested in' if self.interested else 'passed on'
         return f"{self.user.email} {action} {self.job.title}"
+
+
+class JobAcceptance(BaseModel):
+    STATUS_CHOICES = [
+        ('accepted', 'Accepted'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('dropped', 'Dropped'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='job_acceptances')
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='acceptances')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='accepted')
+
+    class Meta:
+        unique_together = ('user', 'job')
+
+    def __str__(self):
+        return f"{self.user.email} {self.status} for {self.job.title}"

@@ -15,3 +15,11 @@ export interface LoginResponse {
   access: string;
   refresh: string;
 }
+
+export interface RegisterPayload {
+  email: string;
+  username: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+}

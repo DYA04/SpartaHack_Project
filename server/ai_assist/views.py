@@ -2,7 +2,8 @@ import logging
 
 from django.core.cache import cache
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .gemini import enhance_job_description
@@ -33,6 +34,7 @@ def _increment_rate_limit(user_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def enhance_job(request):
     prompt = request.data.get('prompt', '').strip()
 

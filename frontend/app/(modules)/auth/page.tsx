@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useAuthStore } from '@/lib/viewmodels/auth.viewmodel';
-import api from '@/lib/api';
+import { authService } from '@/lib/services/auth.service';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -45,7 +45,7 @@ function AuthForm() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/matching');
     }
   }, [isAuthenticated, router]);
 
@@ -68,42 +68,38 @@ function AuthForm() {
           return;
         }
 
-        // Register user
-        await api.post('/register/', {
+        await authService.register({
           email: formData.email,
-          username: formData.username,
+          username: formData.username || '',
           password: formData.password,
           first_name: formData.first_name,
           last_name: formData.last_name,
         });
 
         // Auto sign in after registration
-        const loginResponse = await api.post('/login/', {
+        const tokens = await authService.login({
           email: formData.email,
           password: formData.password,
         });
 
-        localStorage.setItem('access_token', loginResponse.data.access);
-        localStorage.setItem('refresh_token', loginResponse.data.refresh);
+        localStorage.setItem('access_token', tokens.access);
+        localStorage.setItem('refresh_token', tokens.refresh);
 
-        // Fetch user profile
-        const userResponse = await api.get('/users/me/');
-        setUser(userResponse.data);
-        router.push('/dashboard');
+        const user = await authService.getMe();
+        setUser(user);
+        router.push('/matching');
       } else {
-        // Sign in
-        const loginResponse = await api.post('/login/', {
+        const tokens = await authService.login({
           email: formData.email,
           password: formData.password,
         });
 
-        localStorage.setItem('access_token', loginResponse.data.access);
-        localStorage.setItem('refresh_token', loginResponse.data.refresh);
+        localStorage.setItem('access_token', tokens.access);
+        localStorage.setItem('refresh_token', tokens.refresh);
 
-        // Fetch user profile
-        const userResponse = await api.get('/users/me/');
-        setUser(userResponse.data);
-        router.push('/dashboard');
+        const user = await authService.getMe();
+        setUser(user);
+        router.push('/matching');
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string; message?: string } } };

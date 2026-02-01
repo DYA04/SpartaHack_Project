@@ -98,12 +98,6 @@ export default function SwipeCardStack({ jobs: initialJobs, onEmpty }: SwipeCard
 
   return (
     <div className="relative h-full w-full max-w-md mx-auto">
-      {/* Cards remaining indicator */}
-      <div className="absolute top-2 left-0 right-0 flex justify-center z-20">
-        <span className="bg-white/90 backdrop-blur-sm text-gray-600 text-sm font-medium px-3 py-1 rounded-full shadow-sm">
-          {jobs.length - currentIndex} jobs remaining
-        </span>
-      </div>
 
       {/* Render next card behind (for stacked effect) */}
       {nextJob && (

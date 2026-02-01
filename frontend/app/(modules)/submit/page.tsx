@@ -2,9 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { JobSubmissionForm } from '@/components/jobs';
+import { jobService } from '@/lib/services/job.service';
+import { JobFormData } from '@/types/job';
 
 export default function SubmitJobPage() {
   const router = useRouter();
+
+  const handleSubmit = async (data: JobFormData) => {
+    await jobService.createJob(data);
+    router.push('/my-posts');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -33,7 +40,7 @@ export default function SubmitJobPage() {
             </p>
           </div>
 
-          <JobSubmissionForm />
+          <JobSubmissionForm onSubmit={handleSubmit} />
         </div>
       </main>
     </div>
